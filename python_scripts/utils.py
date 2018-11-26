@@ -109,9 +109,9 @@ def knn_match_filter(knn_matches, knn_weight):
         node_distance_list = list(node.distance for node in knn_match)
 
         # Apply ratio test to eliminate False positives.
-        # if max(node_distance_list) > second_largest(node_distance_list) * knn_weight:
-        good_match_index = node_distance_list.index(max(node_distance_list))
-        match_in_range.append(knn_match[good_match_index])
-        pairs_of_matches.append(knn_match)
+        if max(node_distance_list) > second_largest(node_distance_list) * knn_weight:
+            good_match_index = node_distance_list.index(max(node_distance_list))
+            match_in_range.append(knn_match[good_match_index])
+            pairs_of_matches.append(knn_match)
 
     return [match_in_range, pairs_of_matches]

@@ -60,7 +60,7 @@ class HistogramLogicFilter:
 
 class RansacFilter:
     @staticmethod
-    def ransac_homography(kp1, kp2, match_vector, data_plotter):
+    def ransac_homography(kp1, kp2, match_vector, data_plotter, plot_data):
 
         src_pts = np.float32([kp1[m.queryIdx].pt for m in match_vector]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in match_vector]).reshape(-1, 1, 2)
@@ -68,7 +68,7 @@ class RansacFilter:
         h_matrix, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         matches_mask = mask.ravel().tolist()
 
-        if data_plotter is not None:
+        if data_plotter is not None and plot_data:
             data_plotter.plot_ransac_homography(match_vector, h_matrix, matches_mask)
 
         return h_matrix

@@ -6,6 +6,7 @@ import logging
 from utils import *
 from image_manager import ImageManager
 from match_geometric_filters import HistogramLogicFilter, RansacFilter
+from data_plotter import DataPlotter
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -19,10 +20,12 @@ class AlignmentParameters:
     def __init__(self):
         self.threshold_angle = 0
         self.threshold_length = 0
-        self.knn_neighbors = 0
         self.shrink_x_ratio = 0
         self.shrink_y_ratio = 0
         self.plot_images = False
+        self.feature_extractor = 'ORB'
+        self.matcher = 'BF'
+        self.knn_neighbors = 0
 
         self.histogram_weight = None
 
@@ -72,6 +75,7 @@ query_image_path = '../Images/IMG_0570.JPG'
 
 original_query_image = ImageManager()
 original_train_image = ImageManager()
+original_data_plotter = DataPlotter(original_train_image, original_query_image)
 
 # Read images
 start = time.time()
@@ -98,6 +102,8 @@ end = time.time()
 print("TIME: Downsample query image. Elapsed time: ", mid - start)
 print("TIME: Downsample train image. Elapsed time: ", end - mid)
 
+processed_data_plotter = DataPlotter(train_image, query_image)
+
 # Initialize shrink compensator
 shrink_ratio = [1/parameters.shrink_x_ratio, 1/parameters.shrink_y_ratio]
 
@@ -109,7 +115,13 @@ bb = np.array([[0, 0], [0, 0]])
 cum_crop = [0, 0]
 
 # Initiate the feature detector
-cv2_detector = cv2.ORB_create()
+if parameters.feature_extractor == 'SURF':
+    cv2_detector = cv2.xfeatures2d.SURF_create()
+elif parameters.feature_extractor == 'ORB':
+    cv2_detector = cv2.ORB_create()
+else:
+    cv2_detector = cv2.xfeatures2d.SIFT_create()
+
 
 # Find the key points and descriptors for train image
 start = time.time()
@@ -129,16 +141,16 @@ for it in range(0, parameters.crop_iterations):
     end = time.time()
     print("TIME: Extract features of query image. Elapsed time: ", end - start)
 
-    # BFMatcher with default params, to find equivalent features
-    # bf = cv2.BFMatcher()
-
-    FLANN_INDEX_KDTREE = 0
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    search_params = dict(checks=50)
-
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     start = time.time()
-    matches = bf.match(train_image.descriptors, query_image.descriptors)
+    if parameters.matcher == 'KNN':
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(train_image.descriptors, query_image.descriptors, k=parameters.knn_neighbors)
+    else:
+        # Brute force matcher
+        index_params = dict(algorithm=0, trees=5)
+        search_params = dict(checks=50)
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(train_image.descriptors, query_image.descriptors)
     end = time.time()
     print("TIME: Matching done. Elapsed time: ", end - start)
 
@@ -150,15 +162,22 @@ for it in range(0, parameters.crop_iterations):
     # Explore all the weight values
     for weight in parameters.histogram_weight:
 
-        # Filter knn matches by best to second best match ratio
-        start = time.time()
-        [good_matches, good_matches_pairs] = knn_match_filter(matches, weight)
-        end = time.time()
-        print("TIME: Distance filtering of matches done. Elapsed time: ", end - start)
+        if parameters.matcher == 'KNN':
+            # Filter knn matches by best to second best match ratio
+            start = time.time()
+            [good_matches, good_matches_pairs] = knn_match_filter(matches, weight)
+            end = time.time()
+            print("TIME: Distance filtering of matches done. Elapsed time: ", end - start)
+        else:
+            good_matches_pairs = matches
+            try:
+                good_matches = [m for m, n in matches]
+            except Exception:
+                good_matches = good_matches_pairs
 
         start = time.time()
         h_matrix = RansacFilter.ransac_homography(train_image.keypoints, query_image.keypoints, good_matches,
-                                                  None)
+                                                  processed_data_plotter, parameters.plot_images)
         end = time.time()
         print("TIME: RANSAC homography done. Elapsed time: ", end - start)
 
@@ -181,6 +200,10 @@ for it in range(0, parameters.crop_iterations):
         # Recover best configuration (for best weight)
         best_matches_pairs = histogram_filter.saved_configuration.filter_data_by_histogram()
         best_matches = [feature[1] for feature in best_matches_pairs]
+
+        if parameters.plot_images:
+            processed_data_plotter.plot_histogram_filtering(good_matches_pairs, best_matches_pairs, histogram_filter,
+                                                            maxWeight, maxFit)
 
         n_final_matches = len(best_matches_pairs)
 
@@ -224,3 +247,6 @@ bb = bb + [cum_crop, cum_crop]
 
 # Restore shrink
 bb = bb * shrink_ratio
+
+if parameters.plot_images:
+    original_data_plotter.plot_query_bounding_box(bb)
