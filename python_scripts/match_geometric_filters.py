@@ -69,7 +69,7 @@ class RansacFilter:
         h_matrix, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         matches_mask = mask.ravel().tolist()
 
-        data_plotter.plot_ransac_homography(match_vector, h_matrix, matches_mask)
+        #data_plotter.plot_ransac_homography(match_vector, h_matrix, matches_mask)
 
         return h_matrix
 
