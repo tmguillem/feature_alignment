@@ -59,8 +59,8 @@ parameters.crop_iterations = 1
 # Img1path = sys.argv[3]
 # Img2path = sys.argv[4]
 
-train_image_path = 'Images/IMG_0568.JPG'
-query_image_path = 'Images/IMG_0570.JPG'
+train_image_path = '../Images/IMG_0568.JPG'
+query_image_path = '../Images/IMG_0570.JPG'
 
 # Img1path = 'Images/IMG_0596.JPG'
 # Img2path = 'Images/IMG_0621.JPG'
