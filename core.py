@@ -6,8 +6,6 @@ import logging
 from utils import *
 from image_manager import ImageManager
 from match_geometric_filters import HistogramLogicFilter, RansacFilter
-from data_plotter import DataPlotter
-
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -85,8 +83,6 @@ end = time.time()
 print("TIME: Read query image. Elapsed time: ", mid - start)
 print("TIME: Read train image. Elapsed time: ", end - mid)
 
-original_data_plotter = DataPlotter(original_train_image, original_query_image)
-
 # Generate image copies for the processing
 query_image = ImageManager()
 query_image.load_image(original_query_image.image)
@@ -101,8 +97,6 @@ end = time.time()
 
 print("TIME: Downsample query image. Elapsed time: ", mid - start)
 print("TIME: Downsample train image. Elapsed time: ", end - mid)
-
-processed_data_plotter = DataPlotter(train_image, query_image)
 
 # Initialize shrink compensator
 shrink_ratio = [1/parameters.shrink_x_ratio, 1/parameters.shrink_y_ratio]
@@ -164,7 +158,7 @@ for it in range(0, parameters.crop_iterations):
 
         start = time.time()
         h_matrix = RansacFilter.ransac_homography(train_image.keypoints, query_image.keypoints, good_matches,
-                                                  processed_data_plotter)
+                                                  None)
         end = time.time()
         print("TIME: RANSAC homography done. Elapsed time: ", end - start)
 
@@ -187,10 +181,6 @@ for it in range(0, parameters.crop_iterations):
         # Recover best configuration (for best weight)
         best_matches_pairs = histogram_filter.saved_configuration.filter_data_by_histogram()
         best_matches = [feature[1] for feature in best_matches_pairs]
-
-        if parameters.plot_images:
-            processed_data_plotter.plot_histogram_filtering(good_matches_pairs, best_matches_pairs, histogram_filter,
-                                                            maxWeight, maxFit)
 
         n_final_matches = len(best_matches_pairs)
 
@@ -234,6 +224,3 @@ bb = bb + [cum_crop, cum_crop]
 
 # Restore shrink
 bb = bb * shrink_ratio
-
-if parameters.plot_images:
-    original_data_plotter.plot_query_bounding_box(bb)
