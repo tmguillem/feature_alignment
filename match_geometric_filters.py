@@ -32,7 +32,7 @@ class HistogramLogicFilter:
 
         for i, match_object in enumerate(match_vector):
             dist = [a_i - b_i for a_i, b_i in zip(kp2[match_object.trainIdx].pt, kp1[match_object.queryIdx].pt)]
-            angle_vec[i] = np.arctan(dist[1] / dist[0])
+            angle_vec[i] = np.arctan(dist[1] / max(dist[0], 0.01))
             length_vec[i] = np.sqrt(dist[0] ** 2 + dist[1] ** 2)
 
         # Compute histograms of the two distributions (angle and length of the displacement vectors)

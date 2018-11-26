@@ -115,7 +115,7 @@ bb = np.array([[0, 0], [0, 0]])
 cum_crop = [0, 0]
 
 # Initiate the feature detector
-cv2_detector = cv2.xfeatures2d.SURF_create()
+cv2_detector = cv2.ORB_create()
 
 # Find the key points and descriptors for train image
 start = time.time()
@@ -142,11 +142,11 @@ for it in range(0, parameters.crop_iterations):
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
 
-    bf = cv2.FlannBasedMatcher(index_params, search_params)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     start = time.time()
-    matches = bf.knnMatch(train_image.descriptors, query_image.descriptors, k=parameters.knn_neighbors)
+    matches = bf.match(train_image.descriptors, query_image.descriptors)
     end = time.time()
-    print("TIME: Knn matching done. Elapsed time: ", end - start)
+    print("TIME: Matching done. Elapsed time: ", end - start)
 
     # Initialize fitness trackers
     fitness = float('-inf')

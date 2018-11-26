@@ -1,4 +1,4 @@
-FROM python:3.5
+FROM python:2.7
 MAINTAINER Guillem Torrente <guillemtorrente@hotmail.com>
 
 RUN apt-get update
