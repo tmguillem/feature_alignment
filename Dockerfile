@@ -1,6 +1,8 @@
-FROM python:2.7
-MAINTAINER Guillem Torrente <guillemtorrente@hotmail.com>
+FROM duckietown/rpi-duckiebot-base:master18
 
-RUN apt-get update
-RUN pip install -r requirements.txt
+RUN [ "cross-build-start" ]
 
+RUN apt-get update && \
+    pip install -r requirements.txt
+
+RUN [ "cross-build-end" ]
